@@ -22,7 +22,7 @@ services:
     volumes:
       - /home/usuario/docker_volumes/wordpress/html:/var/www/html
     ports:
-      - "80:81"
+      - "81:80"
     networks:
       - wp_network
 
