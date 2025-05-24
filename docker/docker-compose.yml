@@ -1,0 +1,65 @@
+services:
+  db:
+    image: mysql:8.0
+    restart: always
+    env_file: .env
+    volumes:
+      - /home/usuario/docker_volumes/mysql/data:/var/lib/mysql
+    networks:
+      - wp_network
+
+  wordpress:
+    image: wordpress:6.8.1-php8.3-apache
+    restart: always
+    env_file: .env
+    environment:
+      - WORDPRESS_DB_HOST=${WORDPRESS_DB_HOST}
+      - WORDPRESS_DB_NAME=${MYSQL_DATABASE}
+      - WORDPRESS_DB_USER=${MYSQL_USER}
+      - WORDPRESS_DB_PASSWORD=${MYSQL_PASSWORD}
+    depends_on:
+      - db
+    volumes:
+      - /home/usuario/docker_volumes/wordpress/html:/var/www/html
+    ports:
+      - "80:81"
+    networks:
+      - wp_network
+
+  prometheus:
+    image: prom/prometheus:v3.4.0
+    restart: always
+    volumes:
+      - /home/usuario/docker_volumes/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - /home/usuario/docker_volumes/prometheus/data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:12.0.1
+    restart: always
+    env_file: .env
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
+    depends_on:
+      - prometheus
+    volumes:
+      - /home/usuario/docker_volumes/grafana/data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    networks:
+      - wp_network
+
+networks:
+  wp_network:
+    external: true
